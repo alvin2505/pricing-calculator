@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>早餐店定價計算器</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="定價計算器" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 { font-size: 1.5em; margin-bottom: 15px; }
+    label {
+      display: block; margin-bottom: 10px; font-size: 1rem;
+    }
+    input[type="number"], input[type="text"] {
+      width: 150px; font-size: 1rem; padding: 6px; margin-left: 5px;
+    }
+    button {
+      font-size: 1rem; padding: 8px 14px; margin: 8px 5px;
+    }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 15px;
+      overflow-x: auto; display: block;
+    }
+    th, td {
+      border: 1px solid #ccc; padding: 10px; text-align: center;
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      input[type="number"], input[type="text"] {
+        width: 100%; margin-top: 5px; margin-bottom: 5px;
+      }
+      label { font-size: 0.95rem; }
+      button { width: 100%; margin: 5px 0; }
+      table { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>早餐店建議售價計算器</h1>
+  <label>每月固定支出：<input type="number" id="fixedCost" value="30000" /> 元</label>
+  <label>每月目標利潤：<input type="number" id="targetProfit" value="10000" /> 元</label>
+  <label>每日顧客數：<input type="number" id="dailyCustomers" value="100" /></label>
+  <table id="productTable">
+    <thead>
+      <tr>
+        <th>商品名稱</th>
+        <th>成本（元）</th>
+        <th>建議售價（元）</th>
+        <th>預估利潤（元）</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="text" value="蛋餅" /></td>
+        <td><input type="number" value="15" /></td>
+        <td class="suggestedPrice">-</td>
+        <td class="profit">-</td>
+        <td><button onclick="removeRow(this)">刪除</button></td>
+      </tr>
+    </tbody>
+  </table>
+  <button onclick="addRow()">➕ 新增商品</button>
+  <button onclick="calculate()">📊 計算建議售價</button>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+    function addRow() {
+      const table = document.querySelector("#productTable tbody");
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="text" /></td>
+        <td><input type="number" /></td>
+        <td class="suggestedPrice">-</td>
+        <td class="profit">-</td>
+        <td><button onclick="removeRow(this)">刪除</button></td>
+      `;
+      table.appendChild(row);
+    }
+    function removeRow(button) {
+      button.closest("tr").remove();
+    }
+    function roundUpToFive(n) {
+      return Math.ceil(n / 5) * 5;
+    }
+    function calculate() {
+      const fixed = parseFloat(document.getElementById("fixedCost").value);
+      const profit = parseFloat(document.getElementById("targetProfit").value);
+      const customers = parseFloat(document.getElementById("dailyCustomers").value);
+      const requiredPerCustomer = (fixed + profit) / 30 / customers;
+      document.querySelectorAll("#productTable tbody tr").forEach(row => {
+        const costInput = row.cells[1].querySelector("input");
+        const cost = parseFloat(costInput.value);
+        if (isNaN(cost)) return;
+        const suggested = roundUpToFive(cost + requiredPerCustomer);
+        const margin = suggested - cost;
+        row.querySelector(".suggestedPrice").textContent = suggested.toFixed(0);
+        row.querySelector(".profit").textContent = margin.toFixed(0);
+      });
+    }
+  </script>
+</body>
+</html>
